@@ -11,12 +11,7 @@ class HomePageView(View):
     template_name = 'products/home.html'
 
     def get(self, request):
-        product_objects = cache.get('product_objects')
-
-        if product_objects is None:
-            product_objects = Product.objects.all()
-            cache.set('product_objects', product_objects)
-
+        product_objects = cache.get_or_set('product_objects', Product.objects.all())
         context = {
             'products': product_objects
         }
