@@ -2,6 +2,7 @@ from django.core.cache import cache
 from django.db import models
 from django.db.models import QuerySet, Manager
 from django.utils import timezone
+from django_lifecycle import LifecycleModel, hook, AFTER_DELETE, AFTER_SAVE
 
 
 class CustomQuerySet(QuerySet):
@@ -15,13 +16,18 @@ class CustomManager(Manager):
         return CustomQuerySet(self.model, using=self._db)
 
 
-class Product(models.Model):
+class Product(LifecycleModel):
     title = models.CharField(max_length=200, blank=False)
     price = models.CharField(max_length=20, blank=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    objects = CustomManager()
+
     class Meta:
         ordering = ['-created']
 
-    objects = CustomManager()
+    @hook(AFTER_SAVE)
+    @hook(AFTER_DELETE)
+    def invalidate_cache(self):
+        cache.delete('product_objects')
