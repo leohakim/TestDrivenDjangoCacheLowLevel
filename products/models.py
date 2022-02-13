@@ -1,4 +1,18 @@
+from django.core.cache import cache
 from django.db import models
+from django.db.models import QuerySet, Manager
+from django.utils import timezone
+
+
+class CustomQuerySet(QuerySet):
+    def update(self, **kwargs):
+        cache.delete('product_objects')
+        super().update(updated=timezone.now(), **kwargs)
+
+
+class CustomManager(Manager):
+    def get_queryset(self):
+        return CustomQuerySet(self.model, using=self._db)
 
 
 class Product(models.Model):
@@ -9,3 +23,5 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['-created']
+
+    objects = CustomManager()
